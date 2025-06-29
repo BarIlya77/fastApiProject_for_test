@@ -34,6 +34,7 @@ async def get_organizations(db: AsyncSession = Depends(get_db)) -> List[Organiza
     )
     return [OrganizationSchema.model_validate(org) for org in result.scalars().all()]
 
+
 @router.get(
     "/organizations/{org_id}",
     response_model=OrganizationSchema,
@@ -60,6 +61,7 @@ async def get_organization(
         raise HTTPException(status_code=404, detail="Organization not found")
     return OrganizationSchema.model_validate(org)
 
+
 @router.get(
     "/buildings/{building_id}/organizations/",
     response_model=List[OrganizationSchema],
@@ -82,6 +84,7 @@ async def get_orgs_by_building(
     )
     return [OrganizationSchema.model_validate(org) for org in result.scalars().all()]
 
+
 @router.get(
     "/activities/{activity_id}/organizations/",
     response_model=List[OrganizationSchema],
@@ -99,10 +102,12 @@ async def get_orgs_by_activity(
         .where(ActivityModel.id == activity_id)
         .options(
             selectinload(OrganizationModel.building),
-            selectinload(OrganizationModel.phones)
+            selectinload(OrganizationModel.phones),
+            selectinload(OrganizationModel.activities)
         )
     )
     return [OrganizationSchema.model_validate(org) for org in result.scalars().all()]
+
 
 @router.get(
     "/buildings/nearby/",
@@ -124,6 +129,7 @@ async def get_buildings_nearby(
         if geodesic((lat, lon), (b.latitude, b.longitude)).km <= radius_km
     ]
     return nearby
+
 
 @router.get(
     "/organizations/by-activity-tree/{activity_id}",
@@ -152,10 +158,13 @@ async def get_orgs_by_activity_tree(
         .where(ActivityModel.id.in_(select(subquery.c.id)))
         .options(
             selectinload(OrganizationModel.building),
-            selectinload(OrganizationModel.phones)
+            selectinload(OrganizationModel.phones),
+            selectinload(OrganizationModel.activities)
+
         )
     )
     return [OrganizationSchema.model_validate(org) for org in result.scalars().all()]
+
 
 @router.get(
     "/organizations/search/",
